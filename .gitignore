@@ -1,4 +1,33 @@
-# .gitignore
+# Node.js
+node_modules/
 
-# Ignore environment variables file
+# Dependency directories
+npm-debug.log
+yarn-error.log
+
+# Environment variables
 .env
+
+# Editor files
+.vscode/
+.idea/
+
+# Logs
+logs/
+*.log
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Build output
+dist/
+build/
+*.db
+
+# Configuration files
+*.config.js
+
+# Temporary files
+*.tmp
+*.temp
