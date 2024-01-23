@@ -1,10 +1,11 @@
-const express = require('express');
-const contactInfoRoutes = require('./routes/contactInfoRoutes');
-const db = require('./db');
-const cors = require('cors'); // Import the cors middleware
+const express = require("express");
+const cors = require("cors"); // Import the cors middleware
 
+const db = require("./db");
+const contactInfoRoutes = require("./routes/contactInfoRoutes");
+const personalInfoRoutes = require("./routes/personalInfoRoutes")
 
-require('dotenv').config();
+require("dotenv").config();
 
 const port = process.env.PORT || 3000;
 const app = express();
@@ -13,7 +14,9 @@ const app = express();
 app.use(cors());
 
 // Use the contactInfoRoutes for the '/contact-info' endpoint
-app.use('/contactinfo', contactInfoRoutes);
+app.use("/contactinfo", contactInfoRoutes);
+app.use("/personalinfo", personalInfoRoutes);
+
 
 // Start the Express server
 app.listen(port, () => {
