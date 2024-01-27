@@ -5,7 +5,7 @@ const db = require("../db"); // Adjust the path accordingly
 
 // Route handling
 
-//get all http://localhost:3000/contactinfo
+//get all https://localhost:3000/contactinfo
 router.get("/", (req, res) => {
   // Sample query to retrieve data from a table
   db.query("SELECT * FROM contactInfo", (err, results) => {
