@@ -26,7 +26,7 @@ app.use("/contactinfo", contactInfoRoutes); // Routes for contact info
 app.use("/personalinfo", personalInfoRoutes); // Routes for personal info
 app.use("/login", loginRoutes);
 
-const port = process.env.PORT || 3000; // Define the server port
+const port = process.env.PORT || 3001 // Define the server port
 
 // Start the HTTPS server
 httpsServer.listen(port, () => {

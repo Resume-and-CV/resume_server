@@ -3,7 +3,7 @@ const router = express.Router();
 const jwt = require("jsonwebtoken");
 const db = require("../db"); // Import the database connection pool
 
-const JWT_SECRET = "your_jwt_secret"; // Secret key for JWT, should be kept secure
+const JWT_SECRET = process.env.JWT_SECRET; // Secret key for JWT, should be kept secure
 
 router.post("/", async (req, res) => {
   const { username, password } = req.body;
