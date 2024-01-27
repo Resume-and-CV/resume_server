@@ -31,3 +31,8 @@ build/
 # Temporary files
 *.tmp
 *.temp
+
+# Security - Certificate files
+cert.pem
+csr.pem
+key.pem
