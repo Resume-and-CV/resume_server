@@ -2,12 +2,12 @@
 //const mysql = require("mysql");
 require("dotenv").config();
 
-/* const dbConfig = {
+const dbConfig = {
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_DATABASE,
-}; 
+};
 
 const db = mysql.createConnection(dbConfig);
 
@@ -18,9 +18,10 @@ db.connect((err) => {
     throw err;
   }
   console.log("Connected to MySQL server");
-}); */
+});
+module.exports = db;
 
-const { Pool } = require('pg')
+/*const { Pool } = require('pg')
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -29,6 +30,4 @@ const pool = new Pool({
   }
 })
 
-module.exports = pool;
-//module.exports = db;
-
+module.exports = pool;*/
