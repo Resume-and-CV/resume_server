@@ -1,4 +1,4 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
 const jwt = require("jsonwebtoken");
 const db = require("../db"); // Import the database connection pool
