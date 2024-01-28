@@ -5,7 +5,8 @@ const https = require("https");
 const db = require("./db"); // Import database configuration
 const contactInfoRoutes = require("./routes/contactInfoRoutes"); // Import routes for contact info
 const personalInfoRoutes = require("./routes/personalInfoRoutes"); // Import routes for personal info
-const loginRoutes = require("./routes/loginRoutes");
+const loginRoutes = require('./routes/loginRoutes');
+const educationRoutes = require("./routes/educationRoutes")
 
 require("dotenv").config(); // Load environment variables from .env file
 
@@ -25,8 +26,9 @@ const httpsServer = https.createServer(credentials, app);
 app.use("/contactinfo", contactInfoRoutes); // Routes for contact info
 app.use("/personalinfo", personalInfoRoutes); // Routes for personal info
 app.use("/login", loginRoutes);
+app.use("/education", educationRoutes);
 
-const port = process.env.PORT || 3001 // Define the server port
+const port = process.env.PORT || 3000 // Define the server port
 
 // Start the HTTPS server
 httpsServer.listen(port, () => {
