@@ -6,7 +6,7 @@ const db = require("../db"); // Import the database connection pool
 
 const JWT_SECRET = process.env.JWT_SECRET; // Secret key for JWT, should be kept secure
 
-router.get('/db', async (req, res) => {
+/* router.get('/db', async (req, res) => {
   try {
     const client = await db.connect();
     const result = await client.query('SELECT * FROM test_table');
@@ -17,7 +17,7 @@ router.get('/db', async (req, res) => {
     console.error(err);
     res.send("Error " + err);
   }
-})
+}) */
 
 
 router.post("/", (req, res) => {

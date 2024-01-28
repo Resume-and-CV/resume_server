@@ -1,6 +1,6 @@
 // db.js
-//const mysql = require("mysql");
-/* require("dotenv").config();
+/*  const mysql = require("mysql");
+ require("dotenv").config();
 
 const dbConfig = {
   host: process.env.DB_HOST,
@@ -19,7 +19,7 @@ db.connect((err) => {
   }
   console.log("Connected to MySQL server");
 });
-module.exports = db; */
+module.exports = db;  */
 
 const { Pool } = require('pg')
 
@@ -30,4 +30,4 @@ const pool = new Pool({
   }
 })
 
-module.exports = pool;
+module.exports = pool; 
