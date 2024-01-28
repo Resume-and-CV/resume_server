@@ -9,6 +9,7 @@ const saltRounds = 10; // You can adjust this as per your security requirement
 
 router.post("/add", /* authenticateToken ,*/ async (req, res) => {
   const { username, password } = req.body;
+  console.log("username:",username, "password:",password)
 
   try {
     // Check if user already exists
