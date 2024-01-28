@@ -1,5 +1,5 @@
 // db.js
-const mysql = require("mysql");
+//const mysql = require("mysql");
 require("dotenv").config();
 
 /* const dbConfig = {
@@ -29,4 +29,6 @@ const pool = new Pool({
   }
 })
 
-module.exports = db;
+module.exports = pool;
+//module.exports = db;
+
