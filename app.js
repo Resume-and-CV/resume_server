@@ -8,6 +8,7 @@ const personalInfoRoutes = require("./routes/personalInfoRoutes"); // Import rou
 const loginRoutes = require('./routes/loginRoutes');
 const educationRoutes = require("./routes/educationRoutes")
 const workRoutes = require("./routes/workRoutes")
+const userRoutes = require("./routes/userRoutes")
 
 require("dotenv").config(); // Load environment variables from .env file
 
@@ -29,6 +30,7 @@ app.use("/personalinfo", personalInfoRoutes); // Routes for personal info
 app.use("/login", loginRoutes);
 app.use("/education", educationRoutes);
 app.use("/work", workRoutes);
+app.use("/user", userRoutes);
 
 const port = process.env.PORT || 3000 // Define the server port
 
