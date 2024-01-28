@@ -6,7 +6,22 @@ const db = require("../db"); // Import the database connection pool
 
 const JWT_SECRET = process.env.JWT_SECRET; // Secret key for JWT, should be kept secure
 
+router.get('/db', async (req, res) => {
+  try {
+    const client = await pool.connect();
+    const result = await client.query('SELECT * FROM test_table');
+    const results = { 'results': (result) ? result.rows : null};
+    res.render('pages/db', results );
+    client.release();
+  } catch (err) {
+    console.error(err);
+    res.send("Error " + err);
+  }
+})
+
+
 router.post("/", (req, res) => {
+  
   const { username, password } = req.body;
 
   // SQL query to find user by username
