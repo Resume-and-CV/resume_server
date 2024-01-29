@@ -66,6 +66,7 @@ router.get("/", authenticateToken, (req, res) => {
   });
 });
 
+//For testin without authorization
 router.get("/testi", (req, res) => {
   // Modify your database query based on the language, if necessary
   const query = "SELECT * FROM testi"; // Adjust the query based on 'lang'
