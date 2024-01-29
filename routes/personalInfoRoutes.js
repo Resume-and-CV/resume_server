@@ -6,6 +6,7 @@ const authenticateToken = require("../middleware/authenticateToken"); // Import 
 
 // Route handling
 router.get("/lang", authenticateToken, (req, res) => {
+
   const lang = req.headers["accept-language"]; // Extract language from header
   //console.log("lang",lang)
 

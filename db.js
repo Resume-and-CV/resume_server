@@ -1,13 +1,29 @@
 // db.js
+
 const mysql = require("mysql");
 require("dotenv").config();
+const url = require("url");
 
-const dbConfig = {
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_DATABASE,
-};
+// Parse the JAWSDB_URL environment variable
+let dbConfig;
+if (process.env.JAWSDB_URL) {
+  // If running on Heroku with JawsDB
+  const jawsDbUrl = url.parse(process.env.JAWSDB_URL);
+  dbConfig = {
+    host: jawsDbUrl.hostname,
+    user: jawsDbUrl.auth.split(":")[0],
+    password: jawsDbUrl.auth.split(":")[1],
+    database: jawsDbUrl.pathname.slice(1),
+  };
+} else {
+  // Fallback for local development
+  dbConfig = {
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_DATABASE,
+  };
+}
 
 const db = mysql.createConnection(dbConfig);
 
