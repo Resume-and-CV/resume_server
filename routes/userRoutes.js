@@ -7,7 +7,7 @@ const authenticateToken = require("../middleware/authenticateToken"); // Import 
 
 const saltRounds = 10; // You can adjust this as per your security requirement
 
-router.post("/add", /* authenticateToken ,*/ async (req, res) => {
+router.post("/add",  authenticateToken , async (req, res) => {
   const { username, password } = req.body;
   console.log("username:",username, "password:",password)
 
@@ -89,7 +89,5 @@ router.delete("/delete/:username", authenticateToken,(req, res) => {
     res.json({ message: "User deleted successfully" });
   });
 });
-
-module.exports = router;
 
 module.exports = router;
