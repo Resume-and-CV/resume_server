@@ -4,12 +4,11 @@ const bcrypt = require("bcrypt");
 const db = require("../db"); // Import the database connection pool
 const authenticateToken = require("../middleware/authenticateToken"); // Import the authenticateToken middleware
 
-
 const saltRounds = 10; // You can adjust this as per your security requirement
 
-router.post("/add",  authenticateToken , async (req, res) => {
+router.post("/add", authenticateToken, async (req, res) => {
   const { username, password } = req.body;
-  console.log("username:",username, "password:",password)
+  console.log("username:", username, "password:", password);
 
   try {
     // Check if user already exists
@@ -67,8 +66,24 @@ router.get("/", authenticateToken, (req, res) => {
   });
 });
 
+router.get("/testi", (req, res) => {
+  // Modify your database query based on the language, if necessary
+  const query = "SELECT * FROM testi"; // Adjust the query based on 'lang'
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error("Error executing MySQL query:", err);
+      res.status(500).send("Internal Server Error");
+    } else {
+      // Optionally, process results based on the language
+      res.json(results);
+    }
+  });
+});
+
+
 // DELETE route to remove a user
-router.delete("/delete/:username", authenticateToken,(req, res) => {
+router.delete("/delete/:username", authenticateToken, (req, res) => {
   const username = req.params.username;
 
   // SQL query to delete a user
