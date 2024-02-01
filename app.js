@@ -9,6 +9,7 @@ const workRoutes = require("./routes/workRoutes");
 const userRoutes = require("./routes/userRoutes");
 const languageInfo = require("./routes/languageInfo");
 const hobbiesRoutes = require("./routes/hobbiesInfo")
+const recommendationRoutes = require("./routes/recommendationRoutes.js")
 
 require("dotenv").config(); // Load environment variables from .env file
 
@@ -25,6 +26,7 @@ app.use("/work", workRoutes);
 app.use("/user", userRoutes);
 app.use("/languageinfo", languageInfo);
 app.use("/hobbiesinfo", hobbiesRoutes);
+app.use("/recommendations", recommendationRoutes);
 
 const port = process.env.PORT || 3000; // Define the server port
 
