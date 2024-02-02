@@ -30,7 +30,7 @@ app.use("/languageinfo", languageInfoRoutes);
 app.use("/hobbiesinfo", hobbiesRoutes);
 app.use("/recommendations", recommendationRoutes);
 app.use("/schoolprojects", schoolProjectRoutes);
-app.use("/personalprojects", personalInfoRoutes)
+app.use("/personalprojects", personalProjectRoutes)
 
 const port = process.env.PORT || 3000; // Define the server port
 
