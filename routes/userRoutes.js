@@ -7,8 +7,8 @@ const authenticateToken = require("../middleware/authenticateToken"); // Import 
 const saltRounds = 10; // You can adjust this as per your security requirement
 
 router.post("/add", authenticateToken, async (req, res) => {
-  const { username, password } = req.body;
-  console.log("username:", username, "password:", password);
+  const { username, password, type } = req.body;
+  //console.log("username:", username, "password:", password), "type:", type;
 
   try {
     // Check if user already exists
@@ -31,8 +31,8 @@ router.post("/add", authenticateToken, async (req, res) => {
 
       // Insert new user into the database
       const addUserQuery =
-        "INSERT INTO users (username, password) VALUES (?, ?)";
-      db.query(addUserQuery, [username, hashedPassword], (err, results) => {
+        "INSERT INTO users (username, password, type) VALUES (?, ?, ?)";
+      db.query(addUserQuery, [username, hashedPassword, type], (err, results) => {
         if (err) {
           console.error("Error executing MySQL query:", err);
           return res
