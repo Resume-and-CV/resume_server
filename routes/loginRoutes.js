@@ -7,7 +7,9 @@ const db = require("../db"); // Import the database connection pool
 const JWT_SECRET = process.env.JWT_SECRET; // Secret key for JWT, should be kept secure
 
 router.post("/", (req, res) => {
-  const { username, password } = req.body;
+  // remove empty spaces from username and password
+  const username = req.body.username.trim();
+  const password = req.body.password.trim();
 
   // SQL query to find user by username
   const query = "SELECT * FROM users WHERE username = ?";
