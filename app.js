@@ -14,7 +14,7 @@ const hobbiesRoutes = require("./routes/hobbiesInfo")
 const recommendationRoutes = require("./routes/recommendationRoutes.js")
 const schoolProjectRoutes = require("./routes/schoolProjectRoutes.js")
 const personalProjectRoutes = require("./routes/personalProjectRoutes.js")
-const mailTrapRoutes = require("./routes/mailTrapRoutes.js")
+const emailRoutes = require("./routes/emailRoutes.js")
 
 require("dotenv").config(); // Load environment variables from .env file
 
@@ -35,7 +35,7 @@ app.use("/hobbiesinfo", hobbiesRoutes);
 app.use("/recommendations", recommendationRoutes);
 app.use("/schoolprojects", schoolProjectRoutes);
 app.use("/personalprojects", personalProjectRoutes)
-app.use("/email", mailTrapRoutes);
+app.use("/email", emailRoutes);
 
 const port = process.env.PORT || 3000; // Define the server port
 

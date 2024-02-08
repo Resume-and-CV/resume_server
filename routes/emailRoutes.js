@@ -1,42 +1,38 @@
+// gmailRoutes.js
 const express = require("express");
-
 const router = express.Router();
+const sendEmail = require("../middleware/sendEmail");
+const authenticateToken = require("../middleware/authenticateToken"); // Import the authenticateToken middleware
 
-const mailtrapService = require("../middleware/mailTrtapService");
-const sendGmail = require("../middleware/gmail")
 
 router.post("/send-request", async (req, res) => {
   try {
-    const response = await sendGmail.sendMail(req, res);
-    res.status(200).json({
-      status: "success",
-      message: "Email sent successfully",
-      data: response,
-    });
+    const { from, subject, text } = req.body;
+    const to = process.env.RECIPIENT_EMAIL
+
+    if (!from || !subject || !text) {
+      return res.status(400).json({ message: "Missing email fields" });
+    }
+    await sendEmail({ from, to, subject, text });
+    res.json({ message: "Email sent successfully" });
   } catch (error) {
-    console.log("error", error);
-    res.status(400).json({
-      status: "error",
-      message: "Email not sent",
-    });
+    console.error(error);
+    res.status(500).json({ message: "Failed to send email" });
   }
 });
 
-
-router.post("/send-mailtrap", async (req, res) => {
+router.post("/send-mail", authenticateToken, async (req, res) => {
   try {
-    const response = await mailtrapService.sendMail(req, res);
-    res.status(200).json({
-      status: "success",
-      message: "Email sent successfully",
-      data: response,
-    });
+    const { from, to, subject, text } = req.body;
+    
+    if (!from || !to || !subject || !text) {
+      return res.status(400).json({ message: "Missing email fields" });
+    }
+    await sendEmail({ from, to, subject, text });
+    res.json({ message: "Email sent successfully" });
   } catch (error) {
-    console.log("error", error);
-    res.status(400).json({
-      status: "error",
-      message: "Email not sent",
-    });
+    console.error(error);
+    res.status(500).json({ message: "Failed to send email" });
   }
 });
 
