@@ -14,7 +14,8 @@ router.post("/send-request", async (req, res) => {
       return res.status(400).json({ message: "Missing email fields" });
     }
     await sendEmail({ from, to, subject, text });
-    res.json({ message: "Email sent successfully" });
+    res.status(200).json({ status: "success", message: "Email sent successfully" });
+
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Failed to send email" });
