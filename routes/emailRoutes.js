@@ -4,11 +4,11 @@ const router = express.Router();
 const sendEmail = require("../middleware/sendEmail");
 const authenticateToken = require("../middleware/authenticateToken"); // Import the authenticateToken middleware
 
-
 router.post("/send-request", async (req, res) => {
   try {
     const { from, subject, text } = req.body;
-    const to = process.env.RECIPIENT_EMAIL
+    const to = process.env.RECIPIENT_EMAIL;
+    //console.log(req.body)
 
     if (!from || !subject || !text) {
       return res.status(400).json({ message: "Missing email fields" });
@@ -24,7 +24,7 @@ router.post("/send-request", async (req, res) => {
 router.post("/send-mail", authenticateToken, async (req, res) => {
   try {
     const { from, to, subject, text } = req.body;
-    
+
     if (!from || !to || !subject || !text) {
       return res.status(400).json({ message: "Missing email fields" });
     }

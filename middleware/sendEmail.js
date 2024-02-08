@@ -10,7 +10,16 @@ const sendEmail = async ({ from, to, subject, text }) => {
     },
   });
 
-  const mailOptions = { from, to, subject, text };
+  // Include sender's email in the email body
+  const emailBody = `From: ${from}\n\n${text}`; // Modify this according to your email format
+
+  const mailOptions = {
+    from: process.env.GMAIL_USERNAME, // Use your own email address here
+    to: to,
+    subject: subject,
+    text: emailBody,
+  };
+
   return transporter.sendMail(mailOptions);
 };
 module.exports = sendEmail;
