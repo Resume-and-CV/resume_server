@@ -66,22 +66,6 @@ router.get("/", authenticateToken, (req, res) => {
   });
 });
 
-//For testin without authorization
-router.get("/testi", (req, res) => {
-  // Modify your database query based on the language, if necessary
-  const query = "SELECT * FROM testi"; // Adjust the query based on 'lang'
-
-  db.query(query, (err, results) => {
-    if (err) {
-      console.error("Error executing MySQL query:", err);
-      res.status(500).send("Internal Server Error");
-    } else {
-      // Optionally, process results based on the language
-      res.json(results);
-    }
-  });
-});
-
 
 // DELETE route to remove a user
 router.delete("/delete/:username", authenticateToken, (req, res) => {
