@@ -1,18 +1,15 @@
-// db.js
-
-const mysql = require("mysql");
+const mysql = require("mysql2/promise");
 require("dotenv").config();
-const url = require("url");
 
-// Parse the JAWSDB_URL environment variable
+// Use the URL constructor for parsing
 let dbConfig;
 if (process.env.JAWSDB_URL) {
   // If running on Heroku with JawsDB
-  const jawsDbUrl = url.parse(process.env.JAWSDB_URL);
+  const jawsDbUrl = new URL(process.env.JAWSDB_URL);
   dbConfig = {
     host: jawsDbUrl.hostname,
-    user: jawsDbUrl.auth.split(":")[0],
-    password: jawsDbUrl.auth.split(":")[1],
+    user: jawsDbUrl.username, // Change to username
+    password: jawsDbUrl.password, // Change to password
     database: jawsDbUrl.pathname.slice(1),
   };
 } else {
@@ -25,15 +22,18 @@ if (process.env.JAWSDB_URL) {
   };
 }
 
-const db = mysql.createConnection(dbConfig);
+const db = mysql.createPool(dbConfig); // Create a pool
 
-// Connect to MySQL
-db.connect((err) => {
-  if (err) {
+// Optionally test the connection
+async function testConnection() {
+  try {
+    await db.query("SELECT 1");
+    console.log("Connected to MySQL server via Pool");
+  } catch (err) {
     console.error("Error connecting to MySQL:", err);
-    throw err;
   }
-  console.log("Connected to MySQL server");
-});
+}
+
+testConnection();
 
 module.exports = db;

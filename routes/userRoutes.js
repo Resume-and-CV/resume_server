@@ -8,44 +8,41 @@ const saltRounds = 10; // You can adjust this as per your security requirement
 
 router.post("/add", authenticateToken, async (req, res) => {
   const { username, password, type } = req.body;
-  //console.log("username:", username, "password:", password), "type:", type;
 
   try {
     // Check if user already exists
-    const userExistsQuery = "SELECT * FROM users WHERE username = ?";
-    db.query(userExistsQuery, [username], async (err, results) => {
-      if (err) {
-        console.error("Error executing MySQL query:", err);
-        return res
-          .status(500)
-          .json({ message: "Internal Server Error", error: err.message });
-      }
+    const [userExistsResults] = await db.query(
+      "SELECT * FROM users WHERE username = ?",
+      [username]
+    );
 
-      if (results.length > 0) {
-        // User already exists
-        return res.status(400).json({ message: "Username already taken" });
-      }
+    if (userExistsResults.length > 0) {
+      // User already exists
+      return res.status(400).json({ message: "Username already taken" });
+    }
 
-      // Hash the password
-      const hashedPassword = await bcrypt.hash(password, saltRounds);
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-      // Insert new user into the database
-      const addUserQuery =
-        "INSERT INTO users (username, password, type) VALUES (?, ?, ?)";
-      db.query(addUserQuery, [username, hashedPassword, type], (err, results) => {
-        if (err) {
-          console.error("Error executing MySQL query:", err);
-          return res
-            .status(500)
-            .json({ message: "Internal Server Error", error: err.message });
-        }
+    // Set expiration date if type is not admin
+    let expirationDate = null;
+    if (type !== "admin") {
+      let currentDate = new Date();
+      expirationDate = new Date(
+        currentDate.setMonth(currentDate.getMonth() + 2)
+      );
+    }
 
-        res.status(201).json({ message: "User created successfully" });
-      });
-    });
+    // Insert new user into the database
+    const [addUserResults] = await db.query(
+      "INSERT INTO users (username, password, type, expiration_date) VALUES (?, ?, ?, ?)",
+      [username, hashedPassword, type, expirationDate]
+    );
+
+    res.status(201).json({ message: "User created successfully" });
   } catch (error) {
     console.error("Unhandled error:", error);
-    return res
+    res
       .status(500)
       .json({ message: "Internal server error", error: error.message });
   }
@@ -66,28 +63,47 @@ router.get("/", authenticateToken, (req, res) => {
   });
 });
 
-
 // DELETE route to remove a user
-router.delete("/delete/:username", authenticateToken, (req, res) => {
+router.delete("/delete/:username", authenticateToken, async (req, res) => {
   const username = req.params.username;
+  let connection; // Declare connection outside to ensure it's accessible in both try and catch blocks
 
-  // SQL query to delete a user
-  const query = "DELETE FROM users WHERE username = ?";
+  try {
+    connection = await db.getConnection(); // Get a connection from the pool
+    await connection.beginTransaction(); // Start a transaction
 
-  db.query(query, [username], (err, results) => {
-    if (err) {
-      console.error("Error executing MySQL query:", err);
-      return res
-        .status(500)
-        .json({ message: "Internal Server Error", error: err.message });
-    }
+    // Delete related sessions first
+    await connection.query(
+      "DELETE FROM UserSessions WHERE user_id = (SELECT user_id FROM users WHERE username = ?)",
+      [username]
+    );
 
-    if (results.affectedRows === 0) {
+    // Then, delete the user
+    const [userDeleteResult] = await connection.query(
+      "DELETE FROM users WHERE username = ?",
+      [username]
+    );
+
+    if (userDeleteResult.affectedRows === 0) {
+      await connection.rollback(); // Rollback the transaction if no user was found
       return res.status(404).json({ message: "User not found" });
     }
 
+    await connection.commit(); // Commit the transaction if everything is fine
     res.json({ message: "User deleted successfully" });
-  });
+  } catch (error) {
+    console.error("Error executing MySQL query:", error);
+    if (connection) {
+      await connection.rollback(); // Rollback the transaction in case of any error
+    }
+    return res
+      .status(500)
+      .json({ message: "Internal Server Error", error: error.message });
+  } finally {
+    if (connection) {
+      await connection.release(); // Release the connection in the finally block to ensure it's always executed
+    }
+  }
 });
 
 module.exports = router;
