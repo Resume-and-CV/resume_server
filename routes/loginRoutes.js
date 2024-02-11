@@ -23,6 +23,11 @@ router.post("/", async (req, res) => {
 
     const user = results[0];
 
+    // Check if the account is expired
+    if (user.expiration_date && new Date(user.expiration_date) < new Date()) {
+      return res.status(403).json({ message: "Account is expired" });
+    }
+
     // Compare the provided password with the hashed password in the database using async/await
     const passwordMatch = await bcrypt.compare(password, user.password);
 
@@ -64,6 +69,68 @@ router.post("/", async (req, res) => {
     return res
       .status(500)
       .json({ message: "Internal server error", error: error.message });
+  }
+});
+
+router.post("/login-with-link", async (req, res) => {
+  const { token } = req.body; // Extract token from the request body
+
+  if (!token) {
+    return res.status(400).send("Token is required");
+  }
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+
+    // Check if the token is expired or already used if implementing one-time-use logic
+    // For the sake of simplicity, this check is omitted here
+
+    // Find the user associated with this token. Assuming `employerId` or similar identifier is stored in the token
+    const [user] = await db.query("SELECT * FROM users WHERE user_id = ?", [
+      decoded.employerId,
+    ]);
+
+    if (user.length === 0) {
+      return res.status(404).send("User not found");
+    }
+
+    // User is found, create a new session or login token for ongoing authentication
+    const userSessionToken = jwt.sign(
+      { id: user[0].user_id, username: user[0].username },
+      JWT_SECRET,
+      { expiresIn: "2h" } // Or any duration appropriate for your application
+    );
+
+    // Optionally, record the session in the database as you did in the regular login route
+
+    // Insert a session record into the database
+    const session_start = new Date();
+    const expiration_time = new Date(
+      session_start.getTime() + 2 * 60 * 60 * 1000
+    ); // 2 hours from now
+
+    await db.query(
+      "INSERT INTO UserSessions (user_id, session_start, session_end, expiration_time, ip_address, user_agent, session_data) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      [
+        user[0].user_id,
+        session_start,
+        null, // session_end is null initially
+        expiration_time,
+        req.ip, // IP address of the user
+        req.headers["user-agent"], // User agent of the user's device
+        null, // session_data can be null or specific data you wish to store
+      ]
+    );
+
+    // Respond with the session token
+    return res.json({
+      message: "Logged in successfully!",
+      token: userSessionToken,
+    });
+  } catch (error) {
+    // Handle errors, e.g., token expiration or verification failure
+    console.error("Login with link error:", error);
+    return res.status(401).send("Invalid or expired link");
   }
 });
 
