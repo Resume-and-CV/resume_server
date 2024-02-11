@@ -48,19 +48,17 @@ router.post("/add", authenticateToken, async (req, res) => {
   }
 });
 
-router.get("/", authenticateToken, (req, res) => {
-  // Modify your database query based on the language, if necessary
-  const query = "SELECT * FROM users"; // Adjust the query based on 'lang'
-
-  db.query(query, (err, results) => {
-    if (err) {
-      console.error("Error executing MySQL query:", err);
-      res.status(500).send("Internal Server Error");
-    } else {
-      // Optionally, process results based on the language
-      res.json(results);
-    }
-  });
+router.get("/", authenticateToken, async (req, res) => {
+  try {
+    const [results] = await db.query("SELECT * FROM users");
+    // Optionally, process results based on the language or other criteria
+    res.json(results);
+  } catch (err) {
+    console.error("Error executing MySQL query:", err);
+    res
+      .status(500)
+      .json({ message: "Internal Server Error", error: err.message });
+  }
 });
 
 // DELETE route to remove a user
