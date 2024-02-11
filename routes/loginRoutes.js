@@ -2,27 +2,20 @@ const express = require("express");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
-const db = require("../db"); // Import the database connection pool
+const db = require("../db"); // Ensure db is set up for mysql2/promise
 
-const JWT_SECRET = process.env.JWT_SECRET; // Secret key for JWT, should be kept secure
+const JWT_SECRET = process.env.JWT_SECRET; // Ensure this is securely set
 
-router.post("/", (req, res) => {
-  // remove empty spaces from username and password
+router.post("/", async (req, res) => {
   const username = req.body.username.trim();
   const password = req.body.password.trim();
 
-  // SQL query to find user by username
-  const query = "SELECT * FROM users WHERE username = ?";
-  db.query(query, [username], (err, results) => {
-    // Error handling for the database query
-    if (err) {
-      console.error("Error executing MySQL query:", err);
-      return res
-        .status(500)
-        .json({ message: "Internal Server Error", error: err.message });
-    }
+  try {
+    // SQL query to find user by username using async/await
+    const [results] = await db.query("SELECT * FROM users WHERE username = ?", [
+      username,
+    ]);
 
-    // Check if the user exists
     if (results.length === 0) {
       // User not found, return generic error message for security
       return res.status(400).json({ message: "Invalid credentials" });
@@ -30,80 +23,115 @@ router.post("/", (req, res) => {
 
     const user = results[0];
 
-    // Compare the provided password with the hashed password in the database
-    bcrypt.compare(password, user.password, (err, passwordMatch) => {
-      // Error handling for bcrypt password comparison
-      if (err) {
-        console.error("Error during password comparison:", err);
-        return res
-          .status(500)
-          .json({ message: "Internal server error", error: err.message });
-      }
+    // Check if the account is expired
+    if (user.expiration_date && new Date(user.expiration_date) < new Date()) {
+      return res.status(403).json({ message: "Account is expired" });
+    }
 
-      if (passwordMatch) {
-        // Credentials are valid, generate a JWT token
-        const token = jwt.sign(
-          { id: user.id, username: user.username },
-          JWT_SECRET,
-          { expiresIn: "2h" }
-        );
+    // Compare the provided password with the hashed password in the database using async/await
+    const passwordMatch = await bcrypt.compare(password, user.password);
 
-        // Insert a session record into the database
-        const signInTimestamp = new Date();
-        const sessionQuery =
-          "INSERT INTO user_sessions (username, sign_in_timestamp, ip_address, user_agent) VALUES (?, ?, ?, ?)";
-        const ip_address = req.ip; // IP address of the user
-        const user_agent = req.headers["user-agent"]; // User agent of the user's device
+    if (!passwordMatch) {
+      // Password does not match, return generic error message
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
 
-        db.query(
-          sessionQuery,
-          [username, signInTimestamp, ip_address, user_agent],
-          (sessionErr, sessionResults) => {
-            // Error handling for session record insertion
-            if (sessionErr) {
-              console.error("Error recording session:", sessionErr);
-              // Decide to log the error and still respond with success or send a 500 response
-              return res
-                .status(500)
-                .json({ message: "Error recording session" });
-            }
+    // Credentials are valid, generate a JWT token
+    const token = jwt.sign(
+      { id: user.user_id, username: user.username },
+      JWT_SECRET,
+      { expiresIn: "2h" }
+    );
 
-            // Respond with success message and JWT token
-            return res.json({ message: "Logged in successfully!", token });
-          }
-        );
-      } else {
-        // Password does not match, return generic error message
-        return res.status(400).json({ message: "Invalid credentials" });
-      }
-    });
-  });
+    // Insert a session record into the database
+    const session_start = new Date();
+    const expiration_time = new Date(
+      session_start.getTime() + 2 * 60 * 60 * 1000
+    ); // 2 hours from now
+
+    await db.query(
+      "INSERT INTO UserSessions (user_id, session_start, session_end, expiration_time, ip_address, user_agent, session_data) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      [
+        user.user_id,
+        session_start,
+        null, // session_end is null initially
+        expiration_time,
+        req.ip, // IP address of the user
+        req.headers["user-agent"], // User agent of the user's device
+        null, // session_data can be null or specific data you wish to store
+      ]
+    );
+
+    // Respond with success message and JWT token
+    return res.json({ message: "Logged in successfully!", token });
+  } catch (error) {
+    console.error("Error during login process:", error);
+    return res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
+  }
 });
 
-//this is for user sessions logout but it doesnt do anything yet
-/* router.post("/logout", (req, res) => {
-  // Extract user ID or username from the JWT token
-  // Assuming you have a middleware to validate the token and add the user info to `req.user`
-  const { username } = req.user;
+router.post("/login-with-link", async (req, res) => {
+  const { token } = req.body; // Extract token from the request body
 
-  // SQL query to update the logout timestamp in the user_sessions table
-  const signOutTimestamp = new Date();
-  const updateSessionQuery = "UPDATE user_sessions SET sign_out_timestamp = ?, session_duration = TIMESTAMPDIFF(SECOND, sign_in_timestamp, ?) WHERE username = ? AND sign_out_timestamp IS NULL";
+  if (!token) {
+    return res.status(400).send("Token is required");
+  }
 
-  db.query(updateSessionQuery, [signOutTimestamp, signOutTimestamp, username], (err, results) => {
-      if (err) {
-          console.error("Error executing MySQL query:", err);
-          return res.status(500).json({ message: "Internal Server Error", error: err.message });
-      }
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
 
-      if (results.affectedRows === 0) {
-          // No active session found to log out
-          return res.status(404).json({ message: "No active session found" });
-      }
+    // Check if the token is expired or already used if implementing one-time-use logic
+    // For the sake of simplicity, this check is omitted here
 
-      // Successfully logged out
-      res.json({ message: "Logged out successfully" });
-  });
-}); */
+    // Find the user associated with this token. Assuming `employerId` or similar identifier is stored in the token
+    const [user] = await db.query("SELECT * FROM users WHERE user_id = ?", [
+      decoded.employerId,
+    ]);
+
+    if (user.length === 0) {
+      return res.status(404).send("User not found");
+    }
+
+    // User is found, create a new session or login token for ongoing authentication
+    const userSessionToken = jwt.sign(
+      { id: user[0].user_id, username: user[0].username },
+      JWT_SECRET,
+      { expiresIn: "2h" } // Or any duration appropriate for your application
+    );
+
+    // Optionally, record the session in the database as you did in the regular login route
+
+    // Insert a session record into the database
+    const session_start = new Date();
+    const expiration_time = new Date(
+      session_start.getTime() + 2 * 60 * 60 * 1000
+    ); // 2 hours from now
+
+    await db.query(
+      "INSERT INTO UserSessions (user_id, session_start, session_end, expiration_time, ip_address, user_agent, session_data) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      [
+        user[0].user_id,
+        session_start,
+        null, // session_end is null initially
+        expiration_time,
+        req.ip, // IP address of the user
+        req.headers["user-agent"], // User agent of the user's device
+        null, // session_data can be null or specific data you wish to store
+      ]
+    );
+
+    // Respond with the session token
+    return res.json({
+      message: "Logged in successfully!",
+      token: userSessionToken,
+    });
+  } catch (error) {
+    // Handle errors, e.g., token expiration or verification failure
+    console.error("Login with link error:", error);
+    return res.status(401).send("Invalid or expired link");
+  }
+});
 
 module.exports = router;
