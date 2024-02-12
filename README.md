@@ -45,7 +45,7 @@ To deploy and run `resume_server` locally, follow these steps:
    DB_DATABASE=This indicates the name of the database you want to use.
    PORT=3001 This determines the port number on which your server will listen for incoming connections. The default is set to 3001,
 
-    JWT_SECRET=This is your chooshing secret key.
+   JWT_SECRET=This is your chooshing secret key.
 
 4. **Server Startup**:
    Launch the server by executing:
