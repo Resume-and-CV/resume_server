@@ -17,6 +17,7 @@ const personalProjectRoutes = require('./routes/personalProjectRoutes.js')
 const emailRoutes = require('./routes/emailRoutes.js')
 const expiringLinkRoutes = require('./routes/expiringLinkRoutes.js')
 const userSessionRoutes = require('./routes/userSessionRoutes.js')
+const headerTextRoutes = require('./routes/headerText.js')
 
 require('dotenv').config() // Load environment variables from .env file
 
@@ -40,6 +41,7 @@ app.use('/personalprojects', personalProjectRoutes)
 app.use('/email', emailRoutes)
 app.use('/expiringlink', expiringLinkRoutes)
 app.use('/usersessions', userSessionRoutes)
+app.use('/headertext', headerTextRoutes)
 
 const port = process.env.PORT || 3000 // Define the server port
 

@@ -3,6 +3,7 @@ const express = require('express')
 const router = express.Router()
 const db = require('../db') // Adjust the path accordingly
 const authenticateToken = require('../middleware/authenticateToken') // Import the authenticateToken middleware
+const { route } = require('./loginRoutes')
 
 // Route handling
 router.get('/get', authenticateToken, async (req, res) => {
