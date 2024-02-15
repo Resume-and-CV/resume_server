@@ -1,25 +1,26 @@
 // referenceRoutes.js
-const express = require("express");
-const router = express.Router();
-const db = require("../db"); // Adjust the path accordingly
-const authenticateToken = require("../middleware/authenticateToken"); // Import the authenticateToken middleware
+const express = require('express')
+const router = express.Router()
+const db = require('../db') // Adjust the path accordingly
+const authenticateToken = require('../middleware/authenticateToken') // Import the authenticateToken middleware
 
 // Route handling
-router.get("/lang", authenticateToken, async (req, res) => {
-  const lang = req.headers["accept-language"]; // Extract language from header
+router.get('/lang', authenticateToken, async (req, res) => {
+  const lang = req.headers['accept-language'] // Extract language from header
 
   try {
     // Modify your database query based on the language, if necessary
-    const query = "SELECT * FROM recommendations WHERE language = ?";
-    const [results] = await db.query(query, [lang]);
-    
+    const query = 'SELECT * FROM recommendations WHERE language = ?'
+    const [results] = await db.query(query, [lang])
+
     // Optionally, process results based on the language
-    res.json(results);
+    res.json(results)
   } catch (err) {
-    console.error("Error executing MySQL query:", err);
-    res.status(500).json({ message: "Internal Server Error", error: err.message });
+    console.error('Error executing MySQL query:', err)
+    res
+      .status(500)
+      .json({ message: 'Internal Server Error', error: err.message })
   }
-});
+})
 
-
-module.exports = router;
+module.exports = router
