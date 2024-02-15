@@ -94,4 +94,30 @@ router.delete('/delete', authenticateToken, async (req, res) => {
   }
 })
 
+router.put('/update', authenticateToken, async (req, res) => {
+  const { user_id, language, header, description } = req.body
+
+  if (user_id === undefined || user_id === null || !language || !header) {
+    return res.status(400).send('user_id, language and header are required')
+  }
+
+  try {
+    const [result] = await db.query(
+      'UPDATE headerText SET header = ?, description = ? WHERE user_id = ? AND language = ?',
+      [header, description, user_id, language],
+    )
+
+    if (result.affectedRows === 0) {
+      return res
+        .status(404)
+        .send('No header text found with the provided user_id and language')
+    }
+
+    res.status(200).send('Data updated successfully')
+  } catch (error) {
+    console.error('Error updating data:', error)
+    res.status(500).send('Server error')
+  }
+})
+
 module.exports = router

@@ -114,7 +114,7 @@ router.post(
   (req, res) => {
     // Respond with success message and JWT token
     return res.json({
-      message: 'Logged in successfullys!',
+      message: 'Logged in successfully!',
       token: req.token,
     })
   },
