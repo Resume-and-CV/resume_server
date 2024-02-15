@@ -70,17 +70,22 @@ router.delete('/delete/:username', authenticateToken, async (req, res) => {
     connection = await db.getConnection() // Get a connection from the pool
     await connection.beginTransaction() // Start a transaction
 
-    // Delete expiring links first
+    // Delete UserSessions first
     await connection.query(
       'DELETE FROM UserSessions WHERE user_id = (SELECT user_id FROM users WHERE username = ?)',
       [username],
     )
-    // Then delete Usersessions
+    // Then delete ExpiringLinks
     await connection.query(
       'DELETE FROM ExpiringLinks WHERE user_id = (SELECT user_id FROM users WHERE username = ?)',
       [username],
     )
 
+    // Delete headerTexts
+    await connection.query(
+      'DELETE FROM headerText WHERE user_id = (SELECT user_id FROM users WHERE username = ?)',
+      [username],
+    )
     // last delete user
     const [userDeleteResult] = await connection.query(
       'DELETE FROM users WHERE username = ?',

@@ -21,17 +21,17 @@ router.get('/getbyuserid', authenticateToken, async (req, res) => {
     if (results.length === 0) {
       const [defaultResults] = await db.query(
         'SELECT * FROM headerText WHERE user_id = ? AND language = ?',
-        [0, language], // Assuming 0 is the user_id for the default text
+        [1, language], // Assuming 1 is the user_id for the default text
       )
       if (defaultResults.length === 0) {
         return res
           .status(404)
           .send('No header text found for the provided language')
       }
-      return res.status(200).json(defaultResults[0])
+      return res.status(200).json(defaultResults)
     }
 
-    res.status(200).json(results[0])
+    res.status(200).json(results)
   } catch (error) {
     console.error('Error fetching data:', error)
     if (error.code === 'ER_BAD_FIELD_ERROR') {
