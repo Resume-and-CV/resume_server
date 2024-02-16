@@ -70,6 +70,53 @@ router.post('/add', authenticateToken, async (req, res) => {
   }
 })
 
+router.put('/update', authenticateToken, async (req, res) => {
+  const {
+    id,
+    institution,
+    degree,
+    major,
+    start_date,
+    end_date,
+    GPA,
+    total_credits_required,
+    language,
+  } = req.body // Extract fields from request body
+
+  try {
+    // Modify your database query based on the id
+    const [results] = await db.query(
+      'UPDATE education SET institution = ?, degree = ?, major = ?, start_date = ?, end_date = ?, GPA = ?, total_credits_required = ?, language = ? WHERE id = ?',
+      [
+        institution,
+        degree,
+        major,
+        start_date,
+        end_date,
+        GPA,
+        total_credits_required,
+        language,
+        id,
+      ],
+    )
+
+    // Check if any rows were updated
+    if (results.affectedRows === 0) {
+      return res.status(404).json({
+        message: 'No education found with the provided id',
+      })
+    }
+
+    // Respond with a success message
+    res.json({ message: 'Education updated successfully' })
+  } catch (err) {
+    console.error('Error executing MySQL query:', err)
+    res
+      .status(500)
+      .json({ message: 'Internal Server Error', error: err.message })
+  }
+})
+
 // Delete an education by id
 router.delete('/delete/:id', authenticateToken, async (req, res) => {
   const id = req.params.id
@@ -177,6 +224,53 @@ router.post('/courses/add', authenticateToken, async (req, res) => {
   }
 })
 
+// Update a course
+router.put('/courses/update', authenticateToken, async (req, res) => {
+  const {
+    course_id,
+    education_id,
+    course_code,
+    course_name,
+    credits,
+    grade,
+    type,
+    language,
+    completion_date,
+  } = req.body
+
+  try {
+    const [results] = await db.query(
+      'UPDATE courses SET education_id = ?, course_code = ?, course_name = ?, credits = ?, grade = ?, type = ?, completion_date = ?, language = ? WHERE course_id = ?',
+      [
+        education_id,
+        course_code,
+        course_name,
+        credits,
+        grade,
+        type,
+        completion_date,
+        language,
+        course_id,
+      ],
+    )
+
+    // Check if any rows were updated
+    if (results.affectedRows === 0) {
+      return res.status(404).json({
+        message: 'No course found with the provided id',
+      })
+    }
+
+    // Respond with a success message
+    res.json({ message: 'Course updated successfully' })
+  } catch (err) {
+    console.error('Error executing MySQL query:', err)
+    res
+      .status(500)
+      .json({ message: 'Internal Server Error', error: err.message })
+  }
+})
+
 // Delete a course by id
 router.delete('/courses/delete/:id', authenticateToken, async (req, res) => {
   const id = req.params.id
@@ -259,6 +353,51 @@ router.post('/exemptions/add', authenticateToken, async (req, res) => {
 
     // Respond with the id of the newly created exemption
     res.json({ id: results.insertId })
+  } catch (err) {
+    console.error('Error executing MySQL query:', err)
+    res
+      .status(500)
+      .json({ message: 'Internal Server Error', error: err.message })
+  }
+})
+
+// Update an exemption
+router.put('/exemptions/update', authenticateToken, async (req, res) => {
+  const {
+    exemption_id,
+    course_id,
+    original_institution,
+    original_course_name,
+    original_credits,
+    completion_date,
+    type,
+    language,
+  } = req.body
+
+  try {
+    const [results] = await db.query(
+      'UPDATE exemptions SET course_id = ?, original_institution = ?, original_course_name = ?, original_credits = ?, completion_date = ?, type = ?, language = ? WHERE exemption_id = ?',
+      [
+        course_id,
+        original_institution,
+        original_course_name,
+        original_credits,
+        completion_date,
+        type,
+        language,
+        exemption_id,
+      ],
+    )
+
+    // Check if any rows were updated
+    if (results.affectedRows === 0) {
+      return res.status(404).json({
+        message: 'No exemption found with the provided id',
+      })
+    }
+
+    // Respond with a success message
+    res.json({ message: 'Exemption updated successfully' })
   } catch (err) {
     console.error('Error executing MySQL query:', err)
     res
