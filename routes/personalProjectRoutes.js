@@ -10,7 +10,7 @@ router.get('/lang', authenticateToken, async (req, res) => {
   try {
     // Modify your database query based on the language, if necessary
     const [results] = await db.query(
-      'SELECT * FROM personalprojects WHERE language = ?',
+      'SELECT * FROM personalprojects WHERE language = ? ORDER by start_date DESC',
       [lang],
     )
 
