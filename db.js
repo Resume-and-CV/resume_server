@@ -11,6 +11,7 @@ if (process.env.RESUMEDB_URL) {
     user: jawsDbUrl.username, // Change to username
     password: jawsDbUrl.password, // Change to password
     database: jawsDbUrl.pathname.slice(1),
+    connectionLimit: 4, // Add the connection limit here
   }
 } else {
   // Fallback for local development
@@ -19,6 +20,7 @@ if (process.env.RESUMEDB_URL) {
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_DATABASE,
+    connectionLimit: 4, // Add the connection limit here
   }
 }
 
