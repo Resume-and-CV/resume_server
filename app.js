@@ -43,7 +43,7 @@ app.use('/expiringlink', expiringLinkRoutes)
 app.use('/usersessions', userSessionRoutes)
 app.use('/headertext', headerTextRoutes)
 
-const port = process.env.PORT || 3000 // Define the server port
+const port = process.env.PORT || 3001 // Define the server port
 
 // Start the HTTP server
 app.listen(port, () => {
