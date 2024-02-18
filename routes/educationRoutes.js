@@ -161,6 +161,7 @@ const deleteEducationById = async (req, res) => {
 //get courses by education_id
 const getCoursesByEducationId = async (req, res) => {
   const education_id = req.query.education_id // Extract education_id from query parameters
+  const lang = req.headers['accept-language'] // Extract language from header
 
   try {
     // Modify your database query based on the education_id
@@ -310,9 +311,7 @@ const getExemptionsByCourseId = async (req, res) => {
 
     // Check if results is empty
     if (results.length === 0) {
-      return res
-        .status(404)
-        .json({ message: 'No exemptions found for the provided course_id' })
+      return res.status(200).json([]) // Return an empty array with a 200 status code
     }
 
     // Process and respond with results based on the language
