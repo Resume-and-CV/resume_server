@@ -5,7 +5,7 @@ const db = require('../db') // Adjust the path accordingly
 const authenticateToken = require('../middleware/authenticateToken') // Import the authenticateToken middleware
 
 // get education
-router.get('/lang', authenticateToken, async (req, res) => {
+const getEducationByLanguage = async (req, res) => {
   const lang = req.headers['accept-language'] // Extract language from header
 
   try {
@@ -30,10 +30,10 @@ router.get('/lang', authenticateToken, async (req, res) => {
       .status(500)
       .json({ message: 'Internal Server Error', error: err.message })
   }
-})
+}
 
 // Post a new education
-router.post('/add', authenticateToken, async (req, res) => {
+const addEducation = async (req, res) => {
   const {
     institution,
     degree,
@@ -68,9 +68,9 @@ router.post('/add', authenticateToken, async (req, res) => {
       .status(500)
       .json({ message: 'Internal Server Error', error: err.message })
   }
-})
+}
 
-router.put('/update', authenticateToken, async (req, res) => {
+const updateEducationById = async (req, res) => {
   const {
     id,
     institution,
@@ -115,10 +115,10 @@ router.put('/update', authenticateToken, async (req, res) => {
       .status(500)
       .json({ message: 'Internal Server Error', error: err.message })
   }
-})
+}
 
 // Delete an education by id
-router.delete('/delete/:id', authenticateToken, async (req, res) => {
+const deleteEducationById = async (req, res) => {
   const id = req.params.id
 
   try {
@@ -156,11 +156,12 @@ router.delete('/delete/:id', authenticateToken, async (req, res) => {
       .status(500)
       .json({ message: 'Internal Server Error', error: err.message })
   }
-})
+}
 
 //get courses by education_id
-router.get('/courses', authenticateToken, async (req, res) => {
+const getCoursesByEducationId = async (req, res) => {
   const education_id = req.query.education_id // Extract education_id from query parameters
+  const lang = req.headers['accept-language'] // Extract language from header
 
   try {
     // Modify your database query based on the education_id
@@ -184,10 +185,10 @@ router.get('/courses', authenticateToken, async (req, res) => {
       .status(500)
       .json({ message: 'Internal Server Error', error: err.message })
   }
-})
+}
 
 // Post a new course
-router.post('/courses/add', authenticateToken, async (req, res) => {
+const addCourseToEducationId = async (req, res) => {
   const {
     education_id,
     course_code,
@@ -222,10 +223,10 @@ router.post('/courses/add', authenticateToken, async (req, res) => {
       .status(500)
       .json({ message: 'Internal Server Error', error: err.message })
   }
-})
+}
 
 // Update a course
-router.put('/courses/update', authenticateToken, async (req, res) => {
+const updateCourseById = async (req, res) => {
   const {
     course_id,
     education_id,
@@ -269,10 +270,10 @@ router.put('/courses/update', authenticateToken, async (req, res) => {
       .status(500)
       .json({ message: 'Internal Server Error', error: err.message })
   }
-})
+}
 
 // Delete a course by id
-router.delete('/courses/delete/:id', authenticateToken, async (req, res) => {
+const deleteCourseById = async (req, res) => {
   const id = req.params.id
 
   try {
@@ -295,10 +296,10 @@ router.delete('/courses/delete/:id', authenticateToken, async (req, res) => {
       .status(500)
       .json({ message: 'Internal Server Error', error: err.message })
   }
-})
+}
 
 //get exemptions by course_id
-router.get('/exemptions', authenticateToken, async (req, res) => {
+const getExemptionsByCourseId = async (req, res) => {
   const course_id = req.query.course_id // Extract course_id from URL parameters
 
   try {
@@ -310,9 +311,7 @@ router.get('/exemptions', authenticateToken, async (req, res) => {
 
     // Check if results is empty
     if (results.length === 0) {
-      return res
-        .status(404)
-        .json({ message: 'No exemptions found for the provided course_id' })
+      return res.status(200).json([]) // Return an empty array with a 200 status code
     }
 
     // Process and respond with results based on the language
@@ -323,10 +322,10 @@ router.get('/exemptions', authenticateToken, async (req, res) => {
       .status(500)
       .json({ message: 'Internal Server Error', error: err.message })
   }
-})
+}
 
 // Post a new exemption
-router.post('/exemptions/add', authenticateToken, async (req, res) => {
+const addExemptionToCourseId = async (req, res) => {
   const {
     course_id,
     original_institution,
@@ -359,10 +358,10 @@ router.post('/exemptions/add', authenticateToken, async (req, res) => {
       .status(500)
       .json({ message: 'Internal Server Error', error: err.message })
   }
-})
+}
 
 // Update an exemption
-router.put('/exemptions/update', authenticateToken, async (req, res) => {
+const updateExemptionById = async (req, res) => {
   const {
     exemption_id,
     course_id,
@@ -404,10 +403,10 @@ router.put('/exemptions/update', authenticateToken, async (req, res) => {
       .status(500)
       .json({ message: 'Internal Server Error', error: err.message })
   }
-})
+}
 
 // Delete an exemption by id
-router.delete('/exemptions/delete/:id', authenticateToken, async (req, res) => {
+const deleteExemptionById = async (req, res) => {
   const id = req.params.id
 
   try {
@@ -431,6 +430,24 @@ router.delete('/exemptions/delete/:id', authenticateToken, async (req, res) => {
       .status(500)
       .json({ message: 'Internal Server Error', error: err.message })
   }
-})
+}
+
+// Education routes
+router.get('/lang', authenticateToken, getEducationByLanguage)
+router.post('/add', authenticateToken, addEducation)
+router.put('/update', authenticateToken, updateEducationById)
+router.delete('/delete/:id', authenticateToken, deleteEducationById)
+
+// Course routes
+router.get('/courses', authenticateToken, getCoursesByEducationId)
+router.post('/courses/add', authenticateToken, addCourseToEducationId)
+router.put('/courses/update', authenticateToken, updateCourseById)
+router.delete('/courses/delete/:id', authenticateToken, deleteCourseById)
+
+// Exemption routes
+router.get('/exemptions', authenticateToken, getExemptionsByCourseId)
+router.post('/exemptions/add', authenticateToken, addExemptionToCourseId)
+router.put('/exemptions/update', authenticateToken, updateExemptionById)
+router.delete('/exemptions/delete/:id', authenticateToken, deleteExemptionById)
 
 module.exports = router
