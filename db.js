@@ -11,7 +11,7 @@ if (process.env.RESUMEDB_URL) {
     user: jawsDbUrl.username, // Change to username
     password: jawsDbUrl.password, // Change to password
     database: jawsDbUrl.pathname.slice(1),
-    connectionLimit: 4, // Add the connection limit here
+    connectionLimit: 3, // Add the connection limit here
   }
 } else {
   // Fallback for local development
@@ -20,11 +20,23 @@ if (process.env.RESUMEDB_URL) {
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_DATABASE,
-    connectionLimit: 4, // Add the connection limit here
+    connectionLimit: 3, // Add the connection limit here
   }
 }
 
 const db = mysql.createPool(dbConfig) // Create a pool
+
+db.on('error', function (err) {
+  console.error('Database connection error:', err)
+  // Handle error, for example by restarting the pool
+  db.end(function (err) {
+    if (err) {
+      console.error('Error ending the connection pool:', err)
+      return
+    }
+    db = mysql.createPool(dbConfig)
+  })
+})
 
 // Optionally test the connection
 async function testConnection() {
