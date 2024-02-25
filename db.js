@@ -24,15 +24,13 @@ if (process.env.RESUMEDB_URL) {
   }
 }
 
-const db = mysql.createPool(dbConfig) // Create a pool
+let db = mysql.createPool(dbConfig) // Create a pool
 
 db.on('error', (err) => {
   if (err.code === 'ECONNRESET') {
     // Connection was forcibly closed by the server
     // You can recreate the pool here
-    pool = mysql.createPool({
-      /* your config */
-    })
+    db = mysql.createPool(dbConfig)
   } else {
     // Unexpected error
     throw err
