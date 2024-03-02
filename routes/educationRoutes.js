@@ -11,7 +11,27 @@ const getEducationByLanguage = async (req, res) => {
   try {
     // Modify your database query based on the language, if necessary
     const [results] = await db.query(
-      'SELECT * FROM education WHERE language = ? ORDER BY start_date DESC',
+      `
+      SELECT e.education_id, et.institution, et.degree,
+      et.major, 
+      e.start_date, 
+      e.end_date, 
+      e.GPA, 
+      e.total_credits_required, 
+      et.language, 
+      e.createdAt, 
+      e.updatedAt 
+    FROM 
+      educations_new e 
+    JOIN 
+      educations_translations_new et 
+    ON 
+      e.education_id = et.education_id
+    WHERE
+      et.language = ?
+    ORDER BY 
+      e.start_date DESC
+    `,
       [lang],
     )
 
@@ -32,41 +52,42 @@ const getEducationByLanguage = async (req, res) => {
   }
 }
 
-// Post a new education
 const addEducation = async (req, res) => {
   const {
-    institution,
-    degree,
-    major,
     start_date,
     end_date,
     GPA,
     total_credits_required,
-    language,
+    translations, // This should be an array of objects
   } = req.body
 
   try {
-    const [results] = await db.query(
-      'INSERT INTO education (institution, degree, major, start_date, end_date, GPA, total_credits_required, language) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [
-        institution,
-        degree,
-        major,
-        start_date,
-        end_date,
-        GPA,
-        total_credits_required,
-        language,
-      ],
+    // First, insert into the educations_new table
+    const [educationResults] = await db.query(
+      'INSERT INTO educations_new (start_date, end_date, GPA, total_credits_required) VALUES (?, ?, ?, ?)',
+      [start_date, end_date, GPA, total_credits_required],
     )
 
+    // Get the ID of the newly inserted education
+    const educationId = educationResults.insertId
+
+    // Then, insert into the educations_translations_new table for each translation
+    for (let translation of translations) {
+      const { institution, degree, major, language } = translation
+      await db.query(
+        'INSERT INTO educations_translations_new (education_id, institution, degree, major, language) VALUES (?, ?, ?, ?, ?)',
+        [educationId, institution, degree, major, language],
+      )
+    }
+
     // Respond with the id of the newly created education
-    res.json({ id: results.insertId })
+    res.json({ educationId, translations })
   } catch (err) {
     console.error('Error executing MySQL query:', err)
-    res
-      .status(500)
-      .json({ message: 'Internal Server Error', error: err.message })
+    res.status(500).json({
+      message: 'An error occurred while adding education',
+      error: err.message,
+    })
   }
 }
 
