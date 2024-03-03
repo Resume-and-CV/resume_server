@@ -1,12 +1,11 @@
 const express = require('express')
 const cors = require('cors')
-const db = require('./db') // Import database configuration
+const db = require('./db.js') // Import database configuration
 const bodyParser = require('body-parser')
 
 const contactInfoRoutes = require('./routes/contactInfoRoutes')
 const personalInfoRoutes = require('./routes/personalInfoRoutes')
 const loginRoutes = require('./routes/loginRoutes')
-const educationRoutes = require('./routes/educationRoutes')
 const workRoutes = require('./routes/workRoutes')
 const userRoutes = require('./routes/userRoutes')
 const languageInfoRoutes = require('./routes/languageInfo')
@@ -19,6 +18,10 @@ const expiringLinkRoutes = require('./routes/expiringLinkRoutes.js')
 const userSessionRoutes = require('./routes/userSessionRoutes.js')
 const headerTextRoutes = require('./routes/headerText.js')
 
+const educationRoutes = require('./routes/educationRoutes/education.js')
+const examptionRoutes = require('./routes/educationRoutes/examption.js')
+const courseRoutes = require('./routes/educationRoutes/course.js')
+
 require('dotenv').config() // Load environment variables from .env file
 
 const app = express()
@@ -30,7 +33,6 @@ app.use(bodyParser.json())
 app.use('/contactinfo', contactInfoRoutes)
 app.use('/personalinfo', personalInfoRoutes)
 app.use('/login', loginRoutes)
-app.use('/education', educationRoutes)
 app.use('/work', workRoutes)
 app.use('/user', userRoutes)
 app.use('/languageinfo', languageInfoRoutes)
@@ -42,6 +44,10 @@ app.use('/email', emailRoutes)
 app.use('/expiringlink', expiringLinkRoutes)
 app.use('/usersessions', userSessionRoutes)
 app.use('/headertext', headerTextRoutes)
+
+app.use('/education', educationRoutes)
+app.use('/exemption', examptionRoutes)
+app.use('/course', courseRoutes)
 
 const port = process.env.PORT || 3001 // Define the server port
 
