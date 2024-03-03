@@ -91,34 +91,54 @@ const addEducation = async (req, res) => {
   }
 }
 
-const updateEducationById = async (req, res) => {
-  const {
-    id,
-    institution,
-    degree,
-    major,
-    start_date,
-    end_date,
-    GPA,
-    total_credits_required,
-    language,
-  } = req.body // Extract fields from request body
+const addEducationTranslationById = async (req, res) => {
+  const { education_id, language, institution, degree, major } = req.body // Extract fields from request body
+
+  try {
+    // Check if an education with the given education_id exists
+    const [educationExists] = await db.query(
+      'SELECT 1 FROM educations_new WHERE education_id = ?',
+      [education_id],
+    )
+
+    if (educationExists.length === 0) {
+      return res.status(404).json({
+        message: 'No education found with the provided id',
+      })
+    }
+
+    // Insert a new row into the education_translations_new table
+    const [results] = await db.query(
+      'INSERT INTO educations_translations_new (education_id, language, institution, degree, major) VALUES (?, ?, ?, ?, ?)',
+      [education_id, language, institution, degree, major],
+    )
+
+    // Check if the row was inserted successfully
+    if (results.affectedRows === 0) {
+      return res.status(500).json({
+        message: 'Failed to insert new education translation',
+      })
+    }
+
+    // Respond with a success message
+    res.json({ message: 'Education translation added successfully' })
+  } catch (err) {
+    console.error('Error executing MySQL query:', err)
+    res
+      .status(500)
+      .json({ message: 'Internal Server Error', error: err.message })
+  }
+}
+
+const updateEducationNewById = async (req, res) => {
+  const { education_id, start_date, end_date, GPA, total_credits_required } =
+    req.body // Extract fields from request body
 
   try {
     // Modify your database query based on the id
     const [results] = await db.query(
-      'UPDATE education SET institution = ?, degree = ?, major = ?, start_date = ?, end_date = ?, GPA = ?, total_credits_required = ?, language = ? WHERE id = ?',
-      [
-        institution,
-        degree,
-        major,
-        start_date,
-        end_date,
-        GPA,
-        total_credits_required,
-        language,
-        id,
-      ],
+      'UPDATE educations_new SET start_date = ?, end_date = ?, GPA = ?, total_credits_required = ? WHERE education_id = ?',
+      [start_date, end_date, GPA, total_credits_required, education_id],
     )
 
     // Check if any rows were updated
@@ -138,29 +158,50 @@ const updateEducationById = async (req, res) => {
   }
 }
 
+const updateEducationTranslationsNewById = async (req, res) => {
+  const { education_id, language, institution, degree, major } = req.body // Extract fields from request body
+
+  try {
+    // Modify your database query based on the id
+    const [results] = await db.query(
+      'UPDATE educations_translations_new SET institution = ?, degree = ?, major = ? WHERE education_id = ? AND language = ?',
+      [institution, degree, major, education_id, language],
+    )
+
+    // Check if any rows were updated
+    if (results.affectedRows === 0) {
+      return res.status(404).json({
+        message:
+          'No education translation found with the provided id and language',
+      })
+    }
+
+    // Respond with a success message
+    res.json({ message: 'Education translation updated successfully' })
+  } catch (err) {
+    console.error('Error executing MySQL query:', err)
+    res
+      .status(500)
+      .json({ message: 'Internal Server Error', error: err.message })
+  }
+}
+
 // Delete an education by id
 const deleteEducationById = async (req, res) => {
   const id = req.params.id
 
   try {
-    // First, find all related course records
-    const [courses] = await db.query(
-      'SELECT course_id FROM courses WHERE education_id = ?',
+    // First, delete all related translation records
+    await db.query(
+      'DELETE FROM educations_translations_new WHERE education_id = ?',
       [id],
     )
 
-    // Then, delete all related exemption records
-    for (let course of courses) {
-      await db.query('DELETE FROM exemptions WHERE course_id = ?', [
-        course.course_id,
-      ])
-    }
-
-    // Next, delete the course records
-    await db.query('DELETE FROM courses WHERE education_id = ?', [id])
-
-    // Finally, delete the education record
-    const [result] = await db.query('DELETE FROM education WHERE id = ?', [id])
+    // Finally, delete the education record from educations_new
+    const [result] = await db.query(
+      'DELETE FROM educations_new WHERE education_id = ?',
+      [id],
+    )
 
     // Check if any rows were deleted
     if (result.affectedRows === 0) {
@@ -181,8 +222,17 @@ const deleteEducationById = async (req, res) => {
 
 // Education routes
 router.get('/lang', authenticateToken, getEducationByLanguage)
+
 router.post('/add', authenticateToken, addEducation)
-router.put('/update', authenticateToken, updateEducationById)
+router.post('/add-translation', authenticateToken, addEducationTranslationById)
+
+router.put('/update', authenticateToken, updateEducationNewById)
+router.put(
+  '/update-translation',
+  authenticateToken,
+  updateEducationTranslationsNewById,
+)
+
 router.delete('/delete/:id', authenticateToken, deleteEducationById)
 
 module.exports = router
