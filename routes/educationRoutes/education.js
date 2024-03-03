@@ -214,6 +214,9 @@ const deleteEducationById = async (req, res) => {
     res.json({ message: 'Education and related records deleted successfully' })
   } catch (err) {
     console.error('Error executing MySQL query:', err)
+    if (err.code === 'ER_ROW_IS_REFERENCED_2') {
+      return res.status(400).json({ message: 'You must delete courses first' })
+    }
     res
       .status(500)
       .json({ message: 'Internal Server Error', error: err.message })

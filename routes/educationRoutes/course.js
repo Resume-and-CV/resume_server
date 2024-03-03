@@ -6,21 +6,55 @@ const authenticateToken = require('../../middleware/authenticateToken') // Impor
 
 //get courses by education_id
 const getCoursesByEducationId = async (req, res) => {
-  const education_id = req.query.education_id // Extract education_id from query parameters
+  const education_id = req.headers['education_id']
   const lang = req.headers['accept-language'] // Extract language from header
 
+  // Check if education_id and lang are provided
+  if (!education_id) {
+    return res.status(400).json({ message: 'Missing education_id in headers' })
+  }
+  if (!lang) {
+    return res
+      .status(400)
+      .json({ message: 'Missing accept-language in headers' })
+  }
+
   try {
-    // Modify your database query based on the education_id
+    // Modify your database query based on the language, if necessary
     const [results] = await db.query(
-      'SELECT * FROM courses WHERE education_id = ?',
-      [education_id],
+      `
+                SELECT 
+                e.course_id,
+                e.education_id, 
+                e.course_code, 
+                et.language, 
+                et.course_name,
+                e.credits, 
+                e.grade, 
+                e.type, 
+                et.language, 
+                e.completion_date, 
+                e.updatedAt 
+            FROM 
+                courses_new e 
+            JOIN 
+                courses_translations_new et 
+            ON 
+                e.course_id = et.course_id
+            WHERE
+                et.language = ? AND
+                e.education_id = ?
+            ORDER BY 
+                e.completion_date ASC
+            `,
+      [lang, education_id],
     )
 
     // Check if results is empty
     if (results.length === 0) {
-      return res
-        .status(404)
-        .json({ message: 'No courses found for provided education_id' })
+      return res.status(404).json({
+        message: 'No courses found for the provided language and education_id',
+      })
     }
 
     // Process and respond with results based on the language
@@ -33,83 +67,44 @@ const getCoursesByEducationId = async (req, res) => {
   }
 }
 
-// Post a new course
 const addCourseToEducationId = async (req, res) => {
   const {
     education_id,
     course_code,
-    course_name,
     credits,
     grade,
     type,
-    language,
     completion_date,
+    translations, // This should be an array of objects, each containing 'language' and 'course_name'
   } = req.body
 
   try {
-    const [results] = await db.query(
-      'INSERT INTO courses (education_id, course_code, course_name, credits, grade, type, completion_date, language) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [
-        education_id,
-        course_code,
-        course_name,
-        credits,
-        grade,
-        type,
-        completion_date,
-        language,
-      ],
+    // Check if the provided education_id exists
+    const [education] = await db.query(
+      'SELECT * FROM educations_new WHERE education_id = ?',
+      [education_id],
     )
 
-    // Respond with the id of the newly created course
-    res.json({ id: results.insertId })
-  } catch (err) {
-    console.error('Error executing MySQL query:', err)
-    res
-      .status(500)
-      .json({ message: 'Internal Server Error', error: err.message })
-  }
-}
-
-// Update a course
-const updateCourseById = async (req, res) => {
-  const {
-    course_id,
-    education_id,
-    course_code,
-    course_name,
-    credits,
-    grade,
-    type,
-    language,
-    completion_date,
-  } = req.body
-
-  try {
-    const [results] = await db.query(
-      'UPDATE courses SET education_id = ?, course_code = ?, course_name = ?, credits = ?, grade = ?, type = ?, completion_date = ?, language = ? WHERE course_id = ?',
-      [
-        education_id,
-        course_code,
-        course_name,
-        credits,
-        grade,
-        type,
-        completion_date,
-        language,
-        course_id,
-      ],
-    )
-
-    // Check if any rows were updated
-    if (results.affectedRows === 0) {
-      return res.status(404).json({
-        message: 'No course found with the provided id',
-      })
+    if (!education.length) {
+      return res.status(400).json({ message: 'Invalid education_id' })
     }
 
-    // Respond with a success message
-    res.json({ message: 'Course updated successfully' })
+    // Insert into courses_new table
+    const [courseResults] = await db.query(
+      'INSERT INTO courses_new (education_id, course_code, credits, grade, type, completion_date) VALUES (?, ?, ?, ?, ?, ?)',
+      [education_id, course_code, credits, grade, type, completion_date],
+    )
+
+    // Insert into courses_translations_new table for each language
+    for (let translation of translations) {
+      await db.query(
+        'INSERT INTO courses_translations_new (course_id, language, course_name) VALUES (?, ?, ?)',
+        [courseResults.insertId, translation.language, translation.course_name],
+      )
+    }
+
+    // Respond with the id of the newly created course
+    res.json({ id: courseResults.insertId })
   } catch (err) {
     console.error('Error executing MySQL query:', err)
     res
@@ -123,21 +118,44 @@ const deleteCourseById = async (req, res) => {
   const id = req.params.id
 
   try {
-    const [result] = await db.query('DELETE FROM courses WHERE course_id = ?', [
+    // Check if course exists
+    const [courses] = await db.query(
+      'SELECT * FROM courses_new WHERE course_id = ?',
+      [id],
+    )
+    if (courses.length === 0) {
+      return res
+        .status(404)
+        .json({ message: 'No course found with the provided id' })
+    }
+
+    // Delete translations from courses_translations_new table
+    await db.query('DELETE FROM courses_translations_new WHERE course_id = ?', [
       id,
     ])
+
+    // Delete course from courses_new table
+    const [result] = await db.query(
+      'DELETE FROM courses_new WHERE course_id = ?',
+      [id],
+    )
 
     // Check if any rows were deleted
     if (result.affectedRows === 0) {
       return res
         .status(404)
-        .json({ message: 'No courses found with the provided course_id' })
+        .json({ message: 'No course found with the provided id' })
     }
 
     // Respond with a success message
-    res.json({ message: 'Education deleted successfully' })
+    res.json({ message: 'Course deleted successfully' })
   } catch (err) {
     console.error('Error executing MySQL query:', err)
+    if (err.code === 'ER_ROW_IS_REFERENCED_2') {
+      return res
+        .status(400)
+        .json({ message: 'You must delete exemptions first' })
+    }
     res
       .status(500)
       .json({ message: 'Internal Server Error', error: err.message })
@@ -145,9 +163,8 @@ const deleteCourseById = async (req, res) => {
 }
 
 // Course routes
-router.get('/', authenticateToken, getCoursesByEducationId)
+router.get('/lang', authenticateToken, getCoursesByEducationId)
 router.post('/add', authenticateToken, addCourseToEducationId)
-router.put('/update', authenticateToken, updateCourseById)
 router.delete('/delete/:id', authenticateToken, deleteCourseById)
 
 module.exports = router
