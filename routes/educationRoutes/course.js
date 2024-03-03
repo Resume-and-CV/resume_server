@@ -129,6 +129,18 @@ const deleteCourseById = async (req, res) => {
         .json({ message: 'No course found with the provided id' })
     }
 
+    // Check if there are any related records in exemptions_new
+    const [relatedRecords] = await db.query(
+      'SELECT * FROM exemptions_new WHERE course_id = ?',
+      [id],
+    )
+
+    if (relatedRecords.length > 0) {
+      return res
+        .status(400)
+        .json({ message: 'You must delete exemptions first' })
+    }
+
     // Delete translations from courses_translations_new table
     await db.query('DELETE FROM courses_translations_new WHERE course_id = ?', [
       id,
@@ -151,17 +163,11 @@ const deleteCourseById = async (req, res) => {
     res.json({ message: 'Course deleted successfully' })
   } catch (err) {
     console.error('Error executing MySQL query:', err)
-    if (err.code === 'ER_ROW_IS_REFERENCED_2') {
-      return res
-        .status(400)
-        .json({ message: 'You must delete exemptions first' })
-    }
     res
       .status(500)
       .json({ message: 'Internal Server Error', error: err.message })
   }
 }
-
 // Course routes
 router.get('/lang', authenticateToken, getCoursesByEducationId)
 router.post('/add', authenticateToken, addCourseToEducationId)

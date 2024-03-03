@@ -73,6 +73,15 @@ const addExemptionToCourseId = async (req, res) => {
   } = req.body
 
   try {
+    // Check if the provided education_id exists
+    const [course] = await db.query(
+      'SELECT * FROM courses_new WHERE course_id = ?',
+      [course_id],
+    )
+
+    if (!course.length) {
+      return res.status(400).json({ message: 'Invalid course_id' })
+    }
     // First, insert into the exemptions_new table
     const [exemptionResults] = await db.query(
       'INSERT INTO exemptions_new (course_id, original_credits, completion_date, type) VALUES (?, ?, ?, ?)',

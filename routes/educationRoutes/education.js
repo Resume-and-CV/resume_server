@@ -191,13 +191,23 @@ const deleteEducationById = async (req, res) => {
   const id = req.params.id
 
   try {
-    // First, delete all related translation records
+    // Check if there are any related records
+    const [relatedRecords] = await db.query(
+      'SELECT * FROM courses_new WHERE education_id = ?',
+      [id],
+    )
+
+    if (relatedRecords.length > 0) {
+      return res.status(400).json({ message: 'You must delete courses first' })
+    }
+
+    // Delete all related translation records
     await db.query(
       'DELETE FROM educations_translations_new WHERE education_id = ?',
       [id],
     )
 
-    // Finally, delete the education record from educations_new
+    // Delete the education record from educations_new
     const [result] = await db.query(
       'DELETE FROM educations_new WHERE education_id = ?',
       [id],
@@ -214,9 +224,6 @@ const deleteEducationById = async (req, res) => {
     res.json({ message: 'Education and related records deleted successfully' })
   } catch (err) {
     console.error('Error executing MySQL query:', err)
-    if (err.code === 'ER_ROW_IS_REFERENCED_2') {
-      return res.status(400).json({ message: 'You must delete courses first' })
-    }
     res
       .status(500)
       .json({ message: 'Internal Server Error', error: err.message })
