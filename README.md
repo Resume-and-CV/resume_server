@@ -70,5 +70,3 @@ Looking ahead, `resume_server` is poised for several enhancements aimed at enric
 - **Improved Security Measures**: Implementing advanced security protocols and encryption techniques to further safeguard user data.
 - **API Expansion**: Extending the API to support additional features and integrations, enhancing the `resume_web` platform's capabilities.
 - **Performance Optimization**: Continual refinement of server performance, ensuring faster response times and efficient data processing.
-
-Stay tuned for updates as we continue to evolve `resume_server`, driving forward our mission to offer a dynamic and secure web-based resume platform.
