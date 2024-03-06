@@ -3,9 +3,9 @@ require('dotenv').config()
 
 // Use the URL constructor for parsing
 let dbConfig
-if (process.env.RESUMEDB_URL) {
+if (process.env.JAWSDB_URL) {
   // If running on Heroku with JawsDB
-  const jawsDbUrl = new URL(process.env.RESUMEDB_URL)
+  const jawsDbUrl = new URL(process.env.JAWSDB_URL)
   dbConfig = {
     host: jawsDbUrl.hostname,
     user: jawsDbUrl.username, // Change to username
