@@ -20,7 +20,6 @@ router.post(
         'SELECT * FROM users WHERE username = ?',
         [username],
       )
-
       if (results.length === 0) {
         // User not found, return generic error message for security
         return res.status(400).json({ message: 'Invalid credentials' })

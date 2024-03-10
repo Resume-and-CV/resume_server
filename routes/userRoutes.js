@@ -3,6 +3,7 @@ const router = express.Router()
 const bcrypt = require('bcrypt')
 const db = require('../db') // Import the database connection pool
 const authenticateToken = require('../middleware/authenticateToken') // Import the authenticateToken middleware
+const isAdmin = require('../middleware/isAdmin') // Import the isAdmin middleware
 
 const saltRounds = 10 // You can adjust this as per your security requirement
 
@@ -48,7 +49,7 @@ router.post('/add', authenticateToken, async (req, res) => {
   }
 })
 
-router.get('/', authenticateToken, async (req, res) => {
+router.get('/', authenticateToken, isAdmin, async (req, res) => {
   try {
     const [results] = await db.query('SELECT * FROM users')
     // Optionally, process results based on the language or other criteria
