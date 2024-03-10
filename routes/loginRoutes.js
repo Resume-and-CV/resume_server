@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken')
 const bcrypt = require('bcrypt')
 const db = require('../db') // Ensure db is set up for mysql2/promise
 const addUserSession = require('../middleware/userSessionMiddlewares') // Import the addUserSession middleware
+const generateToken = require('../middleware/generateToken') // Import the generateToken middleware
 
 const JWT_SECRET = process.env.JWT_SECRET // Ensure this is securely set
 
@@ -40,18 +41,8 @@ router.post(
         return res.status(400).json({ message: 'Invalid credentials' })
       }
 
-      // Credentials are valid, generate a JWT token
-      const token = jwt.sign(
-        { id: user.user_id, username: user.username },
-        JWT_SECRET,
-        { expiresIn: '2h' },
-      )
+      req.user = user // Assign the user data to req.user
 
-      // Add user to the request object
-      req.user = user
-      req.token = token // Add this line
-
-      // Call the next middleware function (addUserSession)
       next()
     } catch (error) {
       console.error('Error during login process:', error)
@@ -60,6 +51,7 @@ router.post(
         .json({ message: 'Internal server error', error: error.message })
     }
   },
+  generateToken,
   addUserSession,
   (req, res) => {
     // Respond with success message and JWT token
@@ -91,18 +83,8 @@ router.post(
         return res.status(404).send('User not found')
       }
 
-      // User is found, create a new session or login token for ongoing authentication
-      const userSessionToken = jwt.sign(
-        { id: user[0].user_id, username: user[0].username },
-        JWT_SECRET,
-        { expiresIn: '2h' }, // Or any duration appropriate for your application
-      )
+      req.user = user[0] // Assign the user data to req.user
 
-      // Add user to the request object
-      req.user = user[0]
-      req.token = userSessionToken // Add this line
-
-      // Call the next middleware function (addUserSession)
       next()
     } catch (error) {
       // Handle errors, e.g., token expiration or verification failure
@@ -110,6 +92,7 @@ router.post(
       return res.status(401).send('Invalid or expired link')
     }
   },
+  generateToken,
   addUserSession,
   (req, res) => {
     // Respond with success message and JWT token
