@@ -40,7 +40,10 @@ router.post('/add', authenticateToken, isAdmin, async (req, res) => {
       [username, hashedPassword, type, expirationDate],
     )
 
-    res.status(201).json({ message: 'User created successfully' })
+    res.status(201).json({
+      message: 'User created successfully',
+      id: addUserResults.insertId,
+    })
   } catch (error) {
     console.error('Unhandled error:', error)
     res
@@ -51,8 +54,30 @@ router.post('/add', authenticateToken, isAdmin, async (req, res) => {
 
 router.get('/', authenticateToken, isAdmin, async (req, res) => {
   try {
-    const [results] = await db.query('SELECT * FROM users')
-    // Optionally, process results based on the language or other criteria
+    const sql = `
+      SELECT 
+        users.user_id, 
+        users.username, 
+        users.type, 
+        users.expiration_date as expiration_date_from_users, 
+        users.createdAt as createdAt_from_users,
+        users.updatedAt as updatedAt_from_users,
+        expiringlinks.link_id, 
+        expiringlinks.user_id as user_id_from_expiringlinks,
+        expiringlinks.link, 
+        expiringlinks.expiration_date as expiration_from_expiringlinks,
+        expiringlinks.createdAt as createdAt_from_expiringlinks,
+        expiringlinks.updatedAt as updatedAt_from_expiringlinks
+      FROM 
+        users 
+      LEFT JOIN 
+        expiringlinks 
+      ON 
+        users.user_id = expiringlinks.user_id
+        ORDER BY 
+        users.createdAt DESC
+    `
+    const [results] = await db.query(sql, [])
     res.json(results)
   } catch (err) {
     console.error('Error executing MySQL query:', err)

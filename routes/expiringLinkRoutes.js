@@ -7,12 +7,12 @@ const jwt = require('jsonwebtoken')
 const JWT_SECRET = process.env.JWT_SECRET
 
 router.post('/add', authenticateToken, async (req, res) => {
-  const { employerId } = req.body // Validate employerId as needed
+  const { user_id, url } = req.body // Validate user_id as needed
 
   try {
     // Generate a unique token for resume access
     const resumeAccessToken = jwt.sign(
-      { employerId },
+      { user_id },
       JWT_SECRET,
       { expiresIn: '60d' }, // Adjust the expiration as needed
     )
@@ -22,12 +22,12 @@ router.post('/add', authenticateToken, async (req, res) => {
     expirationDate.setDate(expirationDate.getDate() + 60) // Add 60 days for consistency with token expiration
 
     // Generate the unique link (assuming the token is part of the link)
-    const uniqueLink = `${process.env.REACT_APP_SERVER_URL}/#/linkloginpage?token=${resumeAccessToken}`
+    const uniqueLink = `${url}/#/linkloginpage?token=${resumeAccessToken}`
 
     // Store the link information in the databasexzs
     await db.query(
       'INSERT INTO ExpiringLinks (user_id, link, expiration_date) VALUES (?, ?, ?)',
-      [employerId, uniqueLink, expirationDate],
+      [user_id, uniqueLink, expirationDate],
     )
 
     // Respond with the unique link
