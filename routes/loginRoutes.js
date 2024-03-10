@@ -44,7 +44,7 @@ router.post(
       const token = jwt.sign(
         { id: user.user_id, username: user.username },
         JWT_SECRET,
-        { expiresIn: '2h' },
+        { expiresIn: '1m' },
       )
 
       // Add user to the request object
