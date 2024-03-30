@@ -89,11 +89,12 @@ router.get('/', authenticateToken, isAdmin, async (req, res) => {
 
 // DELETE route to remove a user
 router.delete(
-  '/delete/:username',
+  '/delete/:userId',
   authenticateToken,
   isAdmin,
   async (req, res) => {
-    const username = req.params.username
+    const userId = req.params.userId
+    //console.log('userId:', userId)
     let connection // Declare connection outside to ensure it's accessible in both try and catch blocks
 
     try {
@@ -101,25 +102,22 @@ router.delete(
       await connection.beginTransaction() // Start a transaction
 
       // Delete UserSessions first
-      await connection.query(
-        'DELETE FROM UserSessions WHERE user_id = (SELECT user_id FROM users WHERE username = ?)',
-        [username],
-      )
+      await connection.query('DELETE FROM UserSessions WHERE user_id = ?', [
+        userId,
+      ])
       // Then delete ExpiringLinks
-      await connection.query(
-        'DELETE FROM ExpiringLinks WHERE user_id = (SELECT user_id FROM users WHERE username = ?)',
-        [username],
-      )
+      await connection.query('DELETE FROM ExpiringLinks WHERE user_id = ?', [
+        userId,
+      ])
 
       // Delete headerTexts
-      await connection.query(
-        'DELETE FROM headerText WHERE user_id = (SELECT user_id FROM users WHERE username = ?)',
-        [username],
-      )
+      await connection.query('DELETE FROM headerText WHERE user_id = ?', [
+        userId,
+      ])
       // last delete user
       const [userDeleteResult] = await connection.query(
-        'DELETE FROM users WHERE username = ?',
-        [username],
+        'DELETE FROM users WHERE user_id = ?',
+        [userId],
       )
 
       if (userDeleteResult.affectedRows === 0) {

@@ -69,13 +69,14 @@ router.post(
 
     try {
       const decoded = jwt.verify(token, JWT_SECRET)
-
+      //console.log('Decoded token:', decoded)
       // Check if the token is expired or already used if implementing one-time-use logic
       // For the sake of simplicity, this check is omitted here
 
-      // Find the user associated with this token. Assuming `employerId` or similar identifier is stored in the token
+      // Find the user associated with this token.
+      // Check both `employerId` and `user_id` to support old and new users
       const [user] = await db.query('SELECT * FROM users WHERE user_id = ?', [
-        decoded.employerId,
+        decoded.user_id,
       ])
 
       if (user.length === 0) {
@@ -83,6 +84,7 @@ router.post(
       }
 
       req.user = user[0] // Assign the user data to req.user
+      //console.log('User found:', req.user)
 
       next()
     } catch (error) {
