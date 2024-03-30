@@ -94,31 +94,53 @@ router.delete(
   isAdmin,
   async (req, res) => {
     const userId = req.params.userId
-    //console.log('userId:', userId)
-    let connection // Declare connection outside to ensure it's accessible in both try and catch blocks
+    let connection
+    let userDeleteResult // Declare userDeleteResult here
 
     try {
-      connection = await db.getConnection() // Get a connection from the pool
-      await connection.beginTransaction() // Start a transaction
+      connection = await db.getConnection()
+      await connection.beginTransaction()
 
-      // Delete UserSessions first
-      await connection.query('DELETE FROM UserSessions WHERE user_id = ?', [
-        userId,
-      ])
-      // Then delete ExpiringLinks
-      await connection.query('DELETE FROM ExpiringLinks WHERE user_id = ?', [
-        userId,
-      ])
+      // Delete UserSessions
+      try {
+        await connection.query('DELETE FROM UserSessions WHERE user_id = ?', [
+          userId,
+        ])
+      } catch (error) {
+        console.error('Error deleting UserSessions:', error)
+      }
+
+      // Delete ExpiringLinks
+      try {
+        await connection.query('DELETE FROM ExpiringLinks WHERE user_id = ?', [
+          userId,
+        ])
+      } catch (error) {
+        console.error('Error deleting ExpiringLinks:', error)
+      }
 
       // Delete headerTexts
-      await connection.query('DELETE FROM headerText WHERE user_id = ?', [
-        userId,
-      ])
-      // last delete user
-      const [userDeleteResult] = await connection.query(
-        'DELETE FROM users WHERE user_id = ?',
-        [userId],
-      )
+      try {
+        await connection.query('DELETE FROM headerText WHERE user_id = ?', [
+          userId,
+        ])
+      } catch (error) {
+        console.error('Error deleting headerText:', error)
+      }
+
+      try {
+        // last delete user
+        ;[userDeleteResult] = await connection.query(
+          // Assign the result to userDeleteResult here
+          'DELETE FROM users WHERE user_id = ?',
+          [userId],
+        )
+      } catch (error) {
+        console.error('Error deleting user:', error)
+        return res
+          .status(500)
+          .json({ message: 'Error deleting user', error: error.message })
+      }
 
       if (userDeleteResult.affectedRows === 0) {
         await connection.rollback() // Rollback the transaction if no user was found
