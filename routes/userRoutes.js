@@ -3,10 +3,11 @@ const router = express.Router()
 const bcrypt = require('bcrypt')
 const db = require('../db') // Import the database connection pool
 const authenticateToken = require('../middleware/authenticateToken') // Import the authenticateToken middleware
+const isAdmin = require('../middleware/isAdmin') // Import the isAdmin middleware
 
 const saltRounds = 10 // You can adjust this as per your security requirement
 
-router.post('/add', authenticateToken, async (req, res) => {
+router.post('/add', authenticateToken, isAdmin, async (req, res) => {
   const { username, password, type } = req.body
 
   try {
@@ -39,7 +40,10 @@ router.post('/add', authenticateToken, async (req, res) => {
       [username, hashedPassword, type, expirationDate],
     )
 
-    res.status(201).json({ message: 'User created successfully' })
+    res.status(201).json({
+      message: 'User created successfully',
+      id: addUserResults.insertId,
+    })
   } catch (error) {
     console.error('Unhandled error:', error)
     res
@@ -48,10 +52,32 @@ router.post('/add', authenticateToken, async (req, res) => {
   }
 })
 
-router.get('/', authenticateToken, async (req, res) => {
+router.get('/', authenticateToken, isAdmin, async (req, res) => {
   try {
-    const [results] = await db.query('SELECT * FROM users')
-    // Optionally, process results based on the language or other criteria
+    const sql = `
+      SELECT 
+        users.user_id, 
+        users.username, 
+        users.type, 
+        users.expiration_date as expiration_date_from_users, 
+        users.createdAt as createdAt_from_users,
+        users.updatedAt as updatedAt_from_users,
+        expiringlinks.link_id, 
+        expiringlinks.user_id as user_id_from_expiringlinks,
+        expiringlinks.link, 
+        expiringlinks.expiration_date as expiration_from_expiringlinks,
+        expiringlinks.createdAt as createdAt_from_expiringlinks,
+        expiringlinks.updatedAt as updatedAt_from_expiringlinks
+      FROM 
+        users 
+      LEFT JOIN 
+        expiringlinks 
+      ON 
+        users.user_id = expiringlinks.user_id
+        ORDER BY 
+        users.createdAt DESC
+    `
+    const [results] = await db.query(sql, [])
     res.json(results)
   } catch (err) {
     console.error('Error executing MySQL query:', err)
@@ -62,56 +88,81 @@ router.get('/', authenticateToken, async (req, res) => {
 })
 
 // DELETE route to remove a user
-router.delete('/delete/:username', authenticateToken, async (req, res) => {
-  const username = req.params.username
-  let connection // Declare connection outside to ensure it's accessible in both try and catch blocks
+router.delete(
+  '/delete/:userId',
+  authenticateToken,
+  isAdmin,
+  async (req, res) => {
+    const userId = req.params.userId
+    let connection
+    let userDeleteResult // Declare userDeleteResult here
 
-  try {
-    connection = await db.getConnection() // Get a connection from the pool
-    await connection.beginTransaction() // Start a transaction
+    try {
+      connection = await db.getConnection()
+      await connection.beginTransaction()
 
-    // Delete UserSessions first
-    await connection.query(
-      'DELETE FROM UserSessions WHERE user_id = (SELECT user_id FROM users WHERE username = ?)',
-      [username],
-    )
-    // Then delete ExpiringLinks
-    await connection.query(
-      'DELETE FROM ExpiringLinks WHERE user_id = (SELECT user_id FROM users WHERE username = ?)',
-      [username],
-    )
+      // Delete UserSessions
+      try {
+        await connection.query('DELETE FROM UserSessions WHERE user_id = ?', [
+          userId,
+        ])
+      } catch (error) {
+        console.error('Error deleting UserSessions:', error)
+      }
 
-    // Delete headerTexts
-    await connection.query(
-      'DELETE FROM headerText WHERE user_id = (SELECT user_id FROM users WHERE username = ?)',
-      [username],
-    )
-    // last delete user
-    const [userDeleteResult] = await connection.query(
-      'DELETE FROM users WHERE username = ?',
-      [username],
-    )
+      // Delete ExpiringLinks
+      try {
+        await connection.query('DELETE FROM ExpiringLinks WHERE user_id = ?', [
+          userId,
+        ])
+      } catch (error) {
+        console.error('Error deleting ExpiringLinks:', error)
+      }
 
-    if (userDeleteResult.affectedRows === 0) {
-      await connection.rollback() // Rollback the transaction if no user was found
-      return res.status(404).json({ message: 'User not found' })
+      // Delete headerTexts
+      try {
+        await connection.query('DELETE FROM headerText WHERE user_id = ?', [
+          userId,
+        ])
+      } catch (error) {
+        console.error('Error deleting headerText:', error)
+      }
+
+      try {
+        // last delete user
+        ;[userDeleteResult] = await connection.query(
+          // Assign the result to userDeleteResult here
+          'DELETE FROM users WHERE user_id = ?',
+          [userId],
+        )
+      } catch (error) {
+        console.error('Error deleting user:', error)
+        return res
+          .status(500)
+          .json({ message: 'Error deleting user', error: error.message })
+      }
+
+      if (userDeleteResult.affectedRows === 0) {
+        await connection.rollback() // Rollback the transaction if no user was found
+        return res.status(404).json({ message: 'User not found' })
+      }
+
+      await connection.commit() // Commit the transaction if everything is fine
+      res.json({ message: 'User deleted successfully' })
+    } catch (error) {
+      console.error('Error executing MySQL query:', error)
+      if (connection) {
+        await connection.rollback() // Rollback the transaction in case of any error
+      }
+      return res
+        .status(500)
+        .json({ message: 'Internal Server Error', error: error.message })
+    } finally {
+      if (connection) {
+        await connection.release() // Release the connection in the finally block to ensure it's always executed
+      }
     }
-
-    await connection.commit() // Commit the transaction if everything is fine
-    res.json({ message: 'User deleted successfully' })
-  } catch (error) {
-    console.error('Error executing MySQL query:', error)
-    if (connection) {
-      await connection.rollback() // Rollback the transaction in case of any error
-    }
-    return res
-      .status(500)
-      .json({ message: 'Internal Server Error', error: error.message })
-  } finally {
-    if (connection) {
-      await connection.release() // Release the connection in the finally block to ensure it's always executed
-    }
-  }
-})
+  },
+)
 
 module.exports = router
