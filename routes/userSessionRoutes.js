@@ -31,7 +31,7 @@ const getUserSession = async (req, res) => {
     if (results.length === 0) {
       return res.status(404).json({ message: 'Usersessions not found' })
     }
-    res.json(results[0])
+    res.json(results)
   } catch (err) {
     console.error('Error executing MySQL query:', err)
     res
