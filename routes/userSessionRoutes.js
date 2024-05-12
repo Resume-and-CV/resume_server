@@ -46,7 +46,7 @@ const getUserSession = async (req, res, next) => {
 }
 
 // Define the DELETE route function
-const deleteUserSession = async (req, res) => {
+const deleteUserSessionById = async (req, res) => {
   const user_id = req.params.user_id
   let connection
 
@@ -66,6 +66,41 @@ const deleteUserSession = async (req, res) => {
 
     await connection.commit()
     res.json({ message: 'Usersessions deleted successfully' })
+  } catch (error) {
+    console.error('Error executing MySQL query:', error)
+    if (connection) {
+      await connection.rollback()
+    }
+    return res
+      .status(500)
+      .json({ message: 'Internal Server Error', error: error.message })
+  } finally {
+    if (connection) {
+      await connection.release()
+    }
+  }
+}
+
+const deleteUserSessionBySessionId = async (req, res) => {
+  const session_id = req.params.session_id
+  let connection
+
+  try {
+    connection = await db.getConnection()
+    await connection.beginTransaction()
+
+    const [sessionDeleteResult] = await connection.query(
+      'DELETE FROM UserSessions WHERE session_id = ?',
+      [session_id],
+    )
+
+    if (sessionDeleteResult.affectedRows === 0) {
+      await connection.rollback()
+      return res.status(404).json({ message: 'Session not found' })
+    }
+
+    await connection.commit()
+    res.json({ message: 'Session deleted successfully' })
   } catch (error) {
     console.error('Error executing MySQL query:', error)
     if (connection) {
@@ -129,7 +164,21 @@ router.get(
   getUserSession,
   convertTimezone,
 )
+
+// Use the function in your route
+router.delete(
+  '/delete/sessionid/:session_id',
+  authenticateToken,
+  isAdmin,
+  deleteUserSessionBySessionId,
+)
+
 router.delete('/delete/all', authenticateToken, isAdmin, deleteAllUserSessions)
-router.delete('/delete/:user_id', authenticateToken, isAdmin, deleteUserSession)
+router.delete(
+  '/delete/userid/:user_id',
+  authenticateToken,
+  isAdmin,
+  deleteUserSessionById,
+)
 
 module.exports = router
