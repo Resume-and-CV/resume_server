@@ -5,14 +5,17 @@ const db = require('../db') // Adjust the path accordingly
 const authenticateToken = require('../middleware/authenticateToken') // Import the authenticateToken middleware
 const isAdmin = require('../middleware/isAdmin') // Import the isAdmin middleware
 const { route } = require('./loginRoutes')
+const convertTimezone = require('../middleware/convertTimezone') // Import the timezoneConversion middleware
 
 // Define the GET route function
-const getAllUserSessions = async (req, res) => {
+const getAllUserSessions = async (req, res, next) => {
   try {
     const [results] = await db.query(
-      'SELECT usersessions.*, users.username FROM usersessions JOIN users ON usersessions.user_id = users.user_id',
+      'SELECT usersessions.*, users.username FROM usersessions JOIN users ON usersessions.user_id = users.user_id ORDER BY session_start DESC',
     )
-    res.json(results)
+
+    res.locals.results = results
+    next()
   } catch (err) {
     console.error('Error executing MySQL query:', err)
     res
@@ -21,17 +24,19 @@ const getAllUserSessions = async (req, res) => {
   }
 }
 
-const getUserSession = async (req, res) => {
+const getUserSession = async (req, res, next) => {
   const user_id = req.params.user_id
   try {
     const [results] = await db.query(
-      'SELECT usersessions.*, users.username FROM usersessions JOIN users ON usersessions.user_id = users.user_id WHERE usersessions.user_id = ?',
+      'SELECT usersessions.*, users.username FROM usersessions JOIN users ON usersessions.user_id = users.user_id WHERE usersessions.user_id = ? ORDER BY session_start DESC',
       [user_id],
     )
     if (results.length === 0) {
       return res.status(404).json({ message: 'Usersessions not found' })
     }
-    res.json(results)
+
+    res.locals.results = results
+    next()
   } catch (err) {
     console.error('Error executing MySQL query:', err)
     res
@@ -110,8 +115,20 @@ const deleteAllUserSessions = async (req, res) => {
 }
 
 // Use the functions in your routes
-router.get('/get/all', authenticateToken, isAdmin, getAllUserSessions)
-router.get('/get/:user_id', authenticateToken, isAdmin, getUserSession)
+router.get(
+  '/get/all',
+  authenticateToken,
+  isAdmin,
+  getAllUserSessions,
+  convertTimezone,
+)
+router.get(
+  '/get/:user_id',
+  authenticateToken,
+  isAdmin,
+  getUserSession,
+  convertTimezone,
+)
 router.delete('/delete/all', authenticateToken, isAdmin, deleteAllUserSessions)
 router.delete('/delete/:user_id', authenticateToken, isAdmin, deleteUserSession)
 
