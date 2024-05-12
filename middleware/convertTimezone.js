@@ -6,15 +6,15 @@ const convertTimezone = (req, res, next) => {
     res.locals.results.forEach((row) => {
       row.session_start = moment(row.session_start)
         .tz('Europe/Helsinki')
-        .format('DD-MM-YYYY HH:mm:ss')
+        .toISOString()
       if (row.session_end) {
         row.session_end = moment(row.session_end)
           .tz('Europe/Helsinki')
-          .format('DD-MM-YYYY HH:mm:ss')
+          .toISOString()
       }
       row.expiration_time = moment(row.expiration_time)
         .tz('Europe/Helsinki')
-        .format('DD-MM-YYYY HH:mm:ss')
+        .toISOString()
     })
   }
   res.json(res.locals.results)
