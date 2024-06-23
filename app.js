@@ -24,6 +24,8 @@ const courseRoutes = require('./routes/educationRoutes/course.js')
 
 const verifyTokenRoutes = require('./routes/verify-token.js')
 
+const generatePDFRoutes = require('./routes/pdfRoutes.js')
+
 require('dotenv').config() // Load environment variables from .env file
 
 const app = express()
@@ -52,6 +54,8 @@ app.use('/exemption', examptionRoutes)
 app.use('/course', courseRoutes)
 
 app.use('/verify-token', verifyTokenRoutes)
+
+app.use('/pdf', generatePDFRoutes)
 
 const port = process.env.PORT || 3001 // Define the server port
 
